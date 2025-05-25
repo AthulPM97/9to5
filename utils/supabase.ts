@@ -75,3 +75,14 @@ export async function createSession(userId: string, startTime: string) {
   if (error) throw error;
   return data;
 }
+
+export async function endSession(sessionId: string, endTime: string) {
+  const { data, error } = await supabase
+    .from('session')
+    .update({ end_time: endTime })
+    .eq('id', sessionId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
