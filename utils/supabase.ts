@@ -11,8 +11,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase URL or Anon Key in environment variables');
 }
 
-if(!userEmail || !userPassword) {
-  throw new Error('Missing user credentials in env')
+if (!userEmail || !userPassword) {
+  throw new Error('Missing user credentials in env');
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -25,7 +25,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 export async function fetchDailySummary(userId: string, date: string) {
-  console.log("in fetch ", userId, date)
   const { data, error } = await supabase
     .from('daily_summary')
     .select('*')
@@ -53,4 +52,26 @@ export async function login() {
 
   const userId = data.user.id;
   return userId;
+}
+
+export async function setDailyTarget(userId: string, date: string, targetMinutes: number) {
+  const { data, error } = await supabase
+    .from('daily_summary')
+    .upsert([{ user_id: userId, date, target_minutes: targetMinutes }], {
+      onConflict: 'user_id,date',
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function createSession(userId: string, startTime: string) {
+  const { data, error } = await supabase
+    .from('session')
+    .insert([{ user_id: userId, start_time: startTime }])
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }
