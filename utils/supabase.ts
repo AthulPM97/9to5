@@ -76,13 +76,24 @@ export async function createSession(userId: string, startTime: string) {
   return data;
 }
 
-export async function endSession(sessionId: string, endTime: string) {
+export async function endSession(sessionId: string, endTime: string, durationMinutes: number) {
   const { data, error } = await supabase
     .from('session')
-    .update({ end_time: endTime })
+    .update({ end_time: endTime, duration_minutes: durationMinutes })
     .eq('id', sessionId)
     .select()
     .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateDailySummary(userId: string, date: string, sessionMinutes: number) {
+  // Increment completed_minutes and session_count atomically
+  const { data, error } = await supabase.rpc('increment_daily_summary', {
+    uid: userId,
+    d: date,
+    mins: sessionMinutes,
+  });
   if (error) throw error;
   return data;
 }

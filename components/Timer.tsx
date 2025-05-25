@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { YStack, SizableText } from 'tamagui';
 import { Button } from './Button';
-import { createSession, endSession } from '~/utils/supabase';
+import { createSession, endSession, updateDailySummary } from '~/utils/supabase';
 
 export function Timer({ userId }: { userId: string | null }) {
   const [elapsedTime, setElapsedTime] = useState(0); // total time in seconds
@@ -40,12 +40,21 @@ export function Timer({ userId }: { userId: string | null }) {
       setElapsedTime((prev) => prev + Math.floor((Date.now() - lastStartTime) / 1000));
       setLastStartTime(null);
       setIsRunning(false);
+
       // Start timeout to auto-end after 10 min
       if (pauseTimeoutRef.current) clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = window.setTimeout(
         async () => {
-          if (sessionId) {
-            await endSession(sessionId, new Date().toISOString());
+          if (sessionId && userId) {
+            const endTime = new Date().toISOString();
+            const minutes = Math.round(elapsedTime / 60);
+            // Update session table with duration_minutes
+            await endSession(sessionId, endTime, minutes);
+            // Update daily summary with completed_minutes and session count
+            const today = endTime.slice(0, 10);
+            if (minutes > 0) {
+              await updateDailySummary(userId, today, minutes);
+            }
             setSessionId(null);
             setElapsedTime(0);
             setLastStartTime(null);
@@ -57,18 +66,26 @@ export function Timer({ userId }: { userId: string | null }) {
   };
 
   // End/reset timer
-  const reset = () => {
+  const reset = async () => {
     setIsRunning(false);
-    setElapsedTime(0);
-    setLastStartTime(null);
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = null;
     }
-    if (sessionId) {
-      endSession(sessionId, new Date().toISOString());
+    if (sessionId && userId) {
+      const endTime = new Date().toISOString();
+      const minutes = Math.round(elapsedTime / 60);
+      // Update session table with duration_minutes
+      await endSession(sessionId, endTime, minutes);
+      // Update daily summary with completed_minutes and session count
+      const today = endTime.slice(0, 10);
+      if (minutes > 0) {
+        await updateDailySummary(userId, today, minutes);
+      }
       setSessionId(null);
     }
+    setElapsedTime(0);
+    setLastStartTime(null);
   };
 
   // Interval effect: update elapsedTime based on Date.now()
