@@ -1,6 +1,7 @@
 import { YStack, H2, Separator, Theme } from 'tamagui';
 
 import { EditScreenInfo } from './EditScreenInfo';
+import ProgressDemo from './Progress';
 
 type ScreenContentProps = {
   title: string;
@@ -15,6 +16,7 @@ export const ScreenContent = ({ title, path, children }: ScreenContentProps) => 
         <H2>{title}</H2>
         <Separator />
         <EditScreenInfo path={path} />
+        <ProgressDemo />
         {children}
       </YStack>
     </Theme>
