@@ -1,0 +1,27 @@
+### 🌟 **Final MVP Features (Updated)**
+
+✅ **Start / Pause / End session** → simple timer, runs only when active  
+✅ **Auto-end session if paused >10 min** → cuts off long breaks automatically  
+✅ **Max session length 2 hours** → forces a break after 2 hours, no overlong sessions  
+✅ **Daily goal tracking** → 8.5h (Mon–Thu), 7.5h (Fri–Sat), 0h (Sun)  
+✅ **Weekly goal tracking** → show total progress toward 50h  
+✅ **Daily streak** → count how many days you hit the daily goal  
+✅ **Minimal dashboard** → today’s progress, weekly progress, streak count  
+✅ **Gentle reminders** → optional notifications when you’re behind on daily hours  
+✅ **Weekly reset on Monday** → streaks, totals, and fresh goals  
+
+---
+
+### 📱 **Updated User Flow**
+
+1️⃣ Open app → press **Start Session** → timer runs  
+2️⃣ Press **Pause** → timer pauses  
+3️⃣ If you don’t resume in 10 min → session auto-ends  
+4️⃣ If session hits 2 hours → auto-end, prompt you to take a break  
+5️⃣ End session (manual or auto) → time added to daily total  
+6️⃣ Daily → see if you hit the goal → update streak  
+7️⃣ Weekly → see if you crossed 50h → celebrate + reset  
+
+---
+
+This setup balances **discipline (auto-end, max limits)** and **flexibility (you control session timing)**. Ready for me to draft the React Native + Supabase structure for this? 🚀
