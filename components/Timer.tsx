@@ -2,23 +2,35 @@ import { useState, useRef, useEffect } from 'react';
 import { YStack, SizableText } from 'tamagui';
 import { Button } from './Button';
 import { createSession, endSession, updateDailySummary } from '~/utils/supabase';
+import { SessionNoteModal } from './SessionNoteModal';
+import { formatTime } from '~/utils/formatTime';
+import { SectionSelectionModal } from './SectionSelectionModal';
 
 export function Timer({ userId }: { userId: string | null }) {
   const [elapsedTime, setElapsedTime] = useState(0); // total time in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [lastStartTime, setLastStartTime] = useState<number | null>(null); // ms timestamp
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [noteInput, setNoteInput] = useState('');
+  const [showSectionModal, setShowSectionModal] = useState(false);
+  const [selectedSection, setSelectedSection] = useState<string | null>(null);
   const intervalRef = useRef<number | null>(null);
   const pauseTimeoutRef = useRef<number | null>(null);
 
   // Start or resume timer
   const start = async () => {
     if (!isRunning && userId) {
+      // If section not selected, open section modal first
+      if (!selectedSection) {
+        setShowSectionModal(true);
+        return;
+      }
       // Create session if needed
       if (!sessionId) {
         const now = new Date().toISOString();
         try {
-          const session = await createSession(userId, now);
+          const session = await createSession(userId, now, selectedSection);
           setSessionId(session.id);
         } catch (e) {}
       }
@@ -49,7 +61,7 @@ export function Timer({ userId }: { userId: string | null }) {
             const endTime = new Date().toISOString();
             const minutes = Math.round(elapsedTime / 60);
             // Update session table with duration_minutes
-            await endSession(sessionId, endTime, minutes);
+            await endSession(sessionId, endTime, minutes, 'Pause exceeded 10 minutes');
             // Update daily summary with completed_minutes and session count
             const today = endTime.slice(0, 10);
             if (minutes > 0) {
@@ -65,18 +77,24 @@ export function Timer({ userId }: { userId: string | null }) {
     }
   };
 
-  // End/reset timer
-  const reset = async () => {
+  // End/reset timer: open modal for note input
+  const reset = () => {
     setIsRunning(false);
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = null;
     }
+    setSelectedSection(null);
+    setShowNoteModal(true); // Open modal for note input
+  };
+
+  // Handle note submission and session/daily summary update
+  const handleSaveNote = async () => {
     if (sessionId && userId) {
       const endTime = new Date().toISOString();
       const minutes = Math.round(elapsedTime / 60);
-      // Update session table with duration_minutes
-      await endSession(sessionId, endTime, minutes);
+      // Update session table with duration_minutes and note
+      await endSession(sessionId, endTime, minutes, noteInput.trim());
       // Update daily summary with completed_minutes and session count
       const today = endTime.slice(0, 10);
       if (minutes > 0) {
@@ -86,6 +104,8 @@ export function Timer({ userId }: { userId: string | null }) {
     }
     setElapsedTime(0);
     setLastStartTime(null);
+    setNoteInput('');
+    setShowNoteModal(false); // Close modal
   };
 
   // Interval effect: update elapsedTime based on Date.now()
@@ -114,19 +134,31 @@ export function Timer({ userId }: { userId: string | null }) {
     };
   }, []);
 
-  const format = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = s % 60;
-    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
-  };
-
   return (
-    <YStack alignItems="center" gap="$2">
-      <SizableText size="$10">{format(elapsedTime)}</SizableText>
-      <YStack flexDirection="row" gap="$2">
-        <Button title={isRunning ? 'Pause' : 'Start'} onPress={isRunning ? pause : start} />
-        <Button title="End" onPress={reset} />
+    <>
+      <YStack alignItems="center" gap="$2">
+        <SizableText size="$10">{formatTime(elapsedTime)}</SizableText>
+        <YStack flexDirection="row" gap="$2">
+          <Button title={isRunning ? 'Pause' : 'Start'} onPress={isRunning ? pause : start} />
+          <Button title="End" onPress={reset} />
+        </YStack>
       </YStack>
-    </YStack>
+      <SectionSelectionModal
+        visible={showSectionModal}
+        selectedSection={selectedSection}
+        onSelect={(section) => {
+          setSelectedSection(section);
+          setShowSectionModal(false);
+          setTimeout(start, 0);
+        }}
+        onClose={() => setShowSectionModal(false)}
+      />
+      <SessionNoteModal
+        visible={showNoteModal}
+        note={noteInput}
+        setNote={setNoteInput}
+        onSave={handleSaveNote}
+      />
+    </>
   );
 }

@@ -66,20 +66,25 @@ export async function setDailyTarget(userId: string, date: string, targetMinutes
   return data;
 }
 
-export async function createSession(userId: string, startTime: string) {
+export async function createSession(userId: string, startTime: string, section: string) {
   const { data, error } = await supabase
     .from('session')
-    .insert([{ user_id: userId, start_time: startTime }])
+    .insert([{ user_id: userId, start_time: startTime, section }])
     .select()
     .single();
   if (error) throw error;
   return data;
 }
 
-export async function endSession(sessionId: string, endTime: string, durationMinutes: number) {
+export async function endSession(
+  sessionId: string,
+  endTime: string,
+  durationMinutes: number,
+  note: string
+) {
   const { data, error } = await supabase
     .from('session')
-    .update({ end_time: endTime, duration_minutes: durationMinutes })
+    .update({ end_time: endTime, duration_minutes: durationMinutes, notes: note })
     .eq('id', sessionId)
     .select()
     .single();
